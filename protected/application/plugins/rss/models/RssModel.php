@@ -1,6 +1,7 @@
 <?php
 /*
- *    Copyright 2008-2009 Laurent Eschenauer and Alard Weisscher
+ * Copyright 2008-2009 Laurent Eschenauer and Alard Weisscher
+ * Copyright 2010 John Hobbs
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -78,8 +79,9 @@ class RssModel extends SourceModel {
 			}
 			$feed_url = $url;
 		} else {
-			$items = $feeds[0];
-			$feed_url = Zend_Feed::getHttpClient()->getUri(true);
+			$feeds_uri = array_keys($feeds);
+			$feed_url = $feeds_uri[0];
+			$items = $feeds[$feed_url];
 		}
 		
 		$title = $items->title();
@@ -108,11 +110,6 @@ class RssModel extends SourceModel {
 
 	private function processItems($items) {
 		$result = array();
-		$tidy = new tidy();		
-		$config = array(
-           'indent'         => true,
-           'output-xhtml'   => true,
-           'wrap'           => 200);
 
         foreach ($items as $item) {
 			$data		= array();
@@ -141,18 +138,15 @@ class RssModel extends SourceModel {
 			$content		 	= (string) $item->content;
 			$desc				= (string) $item->description;	
 			if (strlen($desc) > strlen($content)) $content = $desc;
-	
-			// Tidy !
-			$tidy->parseString($content, $config, 'utf8');
-			$tidy->cleanRepair();
-			$data['content'] = $tidy;	
-			
+
+			$data['content'] = htmLawed::tidy( $content, array( 'safe' => 1, 'tidy' => '2s0n' ) );
+
 			// Save the item in the database
 			$id = $this->addItem($data, $data['published'], SourceItem::BLOG_TYPE, false, false, false, $data['title']);
 			if ($id) $result[] = $id;	
 			if (count($result)> 100) break;
 		}
-		unset($tidy);
+
 		return $result;
 	}
 	
@@ -167,8 +161,13 @@ class RssModel extends SourceModel {
 		// Add the blog title element
 		$element = $form->createElement('text', 'title', array('label' => 'Title', 'decorators' => $form->elementDecorators));
 		$element->setRequired(false);
-		$form->addElement($element);  
-		
+		$form->addElement($element);
+
+		// Add the icon path element
+		$element = $form->createElement('text', 'icon', array('label' => 'Icon', 'decorators' => $form->elementDecorators));
+		$element->setRequired(false);
+		$form->addElement($element);
+
 		// Options
 		$options = array();
 		if ($this->getPropertyDefault('hide_content')) $options[] = 'hide_content';
@@ -208,6 +207,7 @@ class RssModel extends SourceModel {
 		$this->_properties->setProperty('hide_content', $hide_content);
 		
 		$this->_properties->setProperty('title', $values['title']);
+		$this->_properties->setProperty('icon', $values['icon']);
 		return $update;
 	}
 }

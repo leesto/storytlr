@@ -1,12 +1,16 @@
 #!/usr/bin/php 
 <?php
 // Manage the command line
-if ($argc <2) {
-	die("Usage: update.php user\r\n");
-} else if ($argc <3) {
+if ( $argc < 2 ) {
+	die("Usage: {$argv[0]} user [source]\r\n");
+} else if ( $argc == 3 ) {
 	$cl_user = $argv[1];
+	$cl_source = $argv[2];
+} else if ( $argc < 3 ) {
+	$cl_user = $argv[1];
+	$cl_source = null;
 } else {
-	die("Usage: update.php user\r\n");
+	die("Usage: {$argv[0]} user [source]\r\n");
 }
 
 // Update after deployment for location of non-public files
@@ -26,16 +30,18 @@ set_include_path(
 // We want to track how long the update takes
 $start_time = time();
 
-require_once 'Bootstrap.php';
-
-Bootstrap::prepare();
-
 // We don't want to limit this script in time
 ini_set('max_execution_time', 0);
 
+// Prepare the environment
+require_once 'Bootstrap.php';
+Bootstrap::prepare();
+$config = Zend_Registry::get("configuration");
+
 // Setup a logger
 $logger = new Zend_Log();
-$logger->addWriter(new Zend_Log_Writer_Stream($root .'/logs/updates.log'));
+$log_root = isset($config->path->logs) ? $config->path->logs : $root .'/logs';
+$logger->addWriter(new Zend_Log_Writer_Stream($log_root . '/updates.log'));
 Zend_Registry::set('logger',$logger);
 
 // Prepare models we need to access
@@ -71,7 +77,6 @@ $failure = 0;
 $total   = count($sources);
 
 foreach($sources as $source) {
-	echo "Memory: " . memory_get_usage() . "\r\n";
 	
 	if ($source['service'] == 'stuffpress') {
 		continue;
@@ -80,6 +85,12 @@ foreach($sources as $source) {
 	if (!$source['enabled']) {
 		continue;
 	}
+	
+	if( ! is_null( $cl_source ) && $source['service'] != $cl_source ) {
+		continue;
+	}
+	
+	echo "Memory: " . memory_get_usage() . "\r\n";
 	
 	$model 	 = SourceModel::newInstance($source['service'], $source);
 	
@@ -107,4 +118,4 @@ foreach($sources as $source) {
 $end_time = time();
 
 $total_time = $end_time - $start_time;
-echo "Updated $success out of $total sources in $total_time seconds.";
+echo "Updated $success out of $total sources in $total_time seconds.\r\n";
