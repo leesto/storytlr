@@ -43,6 +43,10 @@ rss.default.hide_content=1
 ;; Flickr settings
 ;;flickr.api_key=
 
+;; Facebook Settings
+;;facebook.api_key=
+;;facebook.api_secret=
+
 ;; Twitter settings
 ;;twitter.username=
 ;;twitter.password=

@@ -1,0 +1,8 @@
+<?php 
+	$status  = $this->item->getStatus();
+	$status	= ereg_replace("([[:alpha:]]+://[^[:space:]]+[[:alnum:]/])",'<a href="\\1" rel="nofollow" target="_blank">\\1</a>',$status); // turn any URL’s into links
+?>
+
+<div class="facebook">
+	<div class="title"><?= $status ?></div>
+</div>
