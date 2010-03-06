@@ -110,6 +110,7 @@ class Bootstrap
 	public static function checkEnvironment() {
 		if( ! function_exists( 'mcrypt_module_open' ) ) { die( 'Storytlr requires mcrypt, which can not be found.' ); }
 		if( ! class_exists( 'PDO', false ) ) { die( 'Storytlr requires PDO, which can not be found.' ); }
+		if( ! function_exists( 'curl_init' ) ) { die( 'Storytlr requires PHP Curl, which can not be found.' ); }
 	}
 
 	public static function setupEnvironment()
@@ -130,12 +131,18 @@ class Bootstrap
 	}
 
 	public static function setupConfiguration()
-	{
-		$config_path = self::$root . '/config/config.ini';
-		if (!file_exists($config_path)) {
+	{ 
+		if (file_exists('/etc/storytlr/config.ini')) {
+			$config_path = '/etc/storytlr/config.ini';
+		}
+		else if (file_exists(self::$root . '/config/config.ini')) {
+			$config_path = self::$root . '/config/config.ini';
+		}
+		
+		if (!isset($config_path)) {
 			die("Could not find the config.ini configuration file. Please verify your setup.");
 		}
-
+		
 		$config = new Zend_Config_Ini(
 		$config_path,
 		'general'
@@ -146,7 +153,12 @@ class Bootstrap
 		if ($config->debug) {
 			ini_set('display_errors', true);
 			ini_set('log_errors', true);
-			ini_set('error_log', "/tmp/error.log");
+			if (isset($config->path->logs)) {
+				$log_root = $config->path->logs;
+			} else {
+				$log_root = self::$root .'/logs';
+			}
+			ini_set('error_log', $log_root .'/error.log');
 		}
 	}
 
@@ -215,7 +227,12 @@ class Bootstrap
 			//echo "<p>Page generated in $total_time seconds, memory peak of $peakUsage MB</p>\n";
 
 			// Output time spent data
-			$log = fopen("/tmp/trace.log", "a");
+			if (isset($config->path->logs)) {
+				$log_root = $config->path->logs;
+			} else {
+				$log_root = self::$root .'/logs';
+			}
+			$log = fopen($log_root .'/trace.log', "a");
 			fwrite($log, "$host/$uri\r\n");
 			fwrite($log, "$total_time seconds, memory peak of $peakUsage MB\n\r");
 
@@ -404,7 +421,11 @@ class Bootstrap
 		// Setup the cache path
 		if (isset($config->cache->path)) {
 			$path = $config->cache->path;
-		} else {
+		} 
+		else if (isset($config->path->temp)) {
+			$path = $config->path->temp;
+		}
+		else {
 			$path = "/tmp";
 		}
 
@@ -668,8 +689,10 @@ class Bootstrap
 
 	public static function setupLogger() {
 		$config = self::$registry->configuration;
+		$path = isset($config->path->logs) ? $config->path->logs : self::$root .'/logs/';
+		
 		$logger = new Zend_Log();
-		$logger->addWriter(new Zend_Log_Writer_Stream(self::$root .'/logs/messages.log'));
+		$logger->addWriter(new Zend_Log_Writer_Stream($path . '/messages.log'));
 		if ($config->debug) {
 			$logger->addWriter(new Zend_Log_Writer_Firebug());
 		}
