@@ -22,11 +22,7 @@ class FacebookItem extends SourceItem {
 	protected $_prefix 	= 'facebook';
 	
 	protected $_preamble = 'Facebook Status: ';
-	
-	public function toArray() {
-		$this->_data['status'] = $this->getStatus();
-		return $this->_data;
-	}
+
 	
 	public function getType() {
 		return SourceItem::STATUS_TYPE;
