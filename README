@@ -1,0 +1,24 @@
+FACEBOOK PLUGIN
+===============
+Created by Lee Stone - March 2010
+
+Installation:
+- SQL for DB fields can be found in database.sql
+- Every storytlr installation requires a facebook application (see facebook developer site for instructions to create this). Make sure your canvas url is the same as the url of your storytlr install. From this, all we need is the API key
+- The following entry needs to be added to the config file:
+	;; Facebook Settings
+	facebook.api_key=
+	facebook.api_secret=
+
+Changes / Enhancements to be made:
+1. The user's facebook ID is currently displayed. Not sure whether to make this hidden or not.
+2. [Enhance] For each status, it gets any comments which have been made on it and adds them as comments - is this practical? Just at time of adding?
+3. Need to add in some error handling for the facebook query
+4. The user's name is currently stored in the database with the status at the time the facebook updates are fetched. Should this be put into the status update dynamically so the user can change it?
+
+Dev Notes:
+- This plugin currently uses FQL as status.get wasn't available in the PHP library. It also means that the status source is returned as a string, not an ID.
+- I'm currently having to break the facebook IFrame and redirect to the plugin save page in order get this to work properly - should look at trying to avoid this.
+- Trying to use processItems() kept leading to an undefined function error. Putting the code inline solved the problem. Should try and fix this.
+- When updating, the call to getLastTime suffers from the same problem mentioned above
+- Code needs a bit of tidying at some stage
